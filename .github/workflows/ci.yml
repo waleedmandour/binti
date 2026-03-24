@@ -130,6 +130,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
+    - name: Validate Release Signing Config
+      run: |
+        if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "⚠️ No release keystore found - APK will be debug-signed"
+          echo "For AppGallery submission, add these GitHub Secrets:"
+          echo "  - KEYSTORE_BASE64: Base64-encoded keystore file"
+          echo "  - KEYSTORE_PASSWORD: Keystore password"
+          echo "  - KEY_ALIAS: Key alias"
+          echo "  - KEY_PASSWORD: Key password"
+        else
+          echo "✅ Release signing configured"
+        fi
+        
     - name: Decode Keystore
       env:
         ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}

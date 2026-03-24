@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("com.huawei.agconnect") // Huawei AGConnect for AppGallery
+    id("com.huawei.agconnect") version "1.9.1.301" // Huawei AGConnect for AppGallery
 }
 
 android {
@@ -96,6 +96,9 @@ dependencies {
     
     // ONNX Runtime for ASR
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.16.3")
+    
+    // Huawei HMS Core - AGConnect for AppGallery
+    implementation("com.huawei.agconnect:agconnect-core:1.9.1.301")
     
     // Huawei HMS Core - ML Kit for ASR/TTS fallback
     implementation("com.huawei.hms:ml-speech-semantics-recognizer:3.8.0.301")

@@ -112,6 +112,7 @@ class BintiApplication : Application() {
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = getString(R.string.notification_channel_description)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_SECRET
                 setShowBadge(false)
                 setSound(null, null)
             }

@@ -10,6 +10,11 @@
         name="models"
         path="models/" />
     
+    <!-- Voice packs directory -->
+    <files-path
+        name="voices"
+        path="voices/" />
+    
     <!-- Cache directory -->
     <cache-path
         name="cache"
