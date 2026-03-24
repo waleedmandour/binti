@@ -1,13 +1,13 @@
 # 🚗 Binti - Egyptian Arabic Voice Assistant for BYD DiLink
 
 <div align="center">
-  <img src="docs/binti-logo.png" alt="Binti Logo" width="200"/>
   
   **بنتي - مساعد صوتي باللهجة المصرية لسيارات BYD DiLink**
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://www.android.com)
-  [![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org)
+  [![Android](https://img.shields.io/badge/Platform-Android_14+-green.svg)](https://www.android.com)
+  [![Kotlin](https://img.shields.io/badge/Language-Kotlin_1.9-blue.svg)](https://kotlinlang.org)
+  [![API](https://img.shields.io/badge/Android_API-26%2B-brightgreen.svg)](https://developer.android.com/about/versions)
 </div>
 
 ---
@@ -16,15 +16,57 @@
 
 **Binti** (بنتي - "my daughter") is an Egyptian Arabic voice assistant designed specifically for BYD DiLink infotainment systems. It responds to the wake word **"يا بنتي"** (Ya Binti - "Oh my daughter") and processes commands in Egyptian dialect.
 
-### ✨ Features
+### ✨ Key Features
 
-- 🎤 **Wake Word Detection** - Custom TFLite model for "يا بنتي"
-- 🗣️ **Egyptian Arabic ASR** - Vosk offline speech recognition
-- 🧠 **Intent Classification** - EgyBERT-tiny for NLU
-- 🔊 **Egyptian TTS** - Female voice responses in Egyptian dialect
-- 🚙 **DiLink Integration** - Control AC, navigation, media via AccessibilityService
-- ☁️ **Huawei HMS Fallback** - Cloud ASR/TTS for HMS devices
-- 📴 **Offline-First** - Works without internet (after model download)
+| Feature | Description | Technology |
+|---------|-------------|------------|
+| 🎤 **Wake Word Detection** | Custom TFLite CNN for "يا بنتي" | TensorFlow Lite (~5 MB) |
+| 🗣️ **Egyptian Arabic ASR** | Offline speech recognition | Vosk Egyptian Model (~50 MB) |
+| 🧠 **Intent Classification** | Egyptian Arabic NLU | EgyBERT-tiny (~30 MB) |
+| 🔊 **Egyptian TTS** | Female voice responses | Coqui TTS (~80 MB) |
+| 🚙 **DiLink Integration** | Control vehicle functions | AccessibilityService |
+| ☁️ **Huawei HMS Fallback** | Cloud ASR/TTS when offline unavailable | Huawei ML Kit |
+| 📴 **Offline-First** | Works without internet after model download | All models local |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     User Voice Input                         │
+│                   "يا بنتي، شغلي التكييف"                     │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Wake Word Detector (TFLite CNN)                            │
+│  Continuous audio monitoring → "يا بنتي" detection           │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Voice Processor (Vosk / Huawei ML Kit)                     │
+│  Speech → Egyptian Arabic Text                              │
+│  Primary: Vosk offline → Fallback: Huawei Cloud ASR         │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Intent Classifier (EgyBERT-tiny + Rule-based)              │
+│  Text → Intent + Entities                                   │
+│  Example: "شغلي التكييف" → AC_CONTROL {action: "on"}        │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  DiLink Command Executor                                    │
+│  Intent → Accessibility Actions / System Intents            │
+│  Controls: AC, Navigation, Media, Phone, System             │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Egyptian TTS (Coqui / Huawei ML Kit / Android TTS)         │
+│  Response → Egyptian Female Voice                           │
+│  Example: "تمام، شغلت التكييف"                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -32,10 +74,13 @@
 
 ### Prerequisites
 
-- Android Studio Hedgehog (2023.1.1) or later
-- JDK 17
-- Android SDK 34
-- Physical BYD vehicle with DiLink 5.0 (for testing)
+| Requirement | Version |
+|-------------|---------|
+| Android Studio | Hedgehog (2023.1.1) or later |
+| JDK | 17 |
+| Android SDK | 34 |
+| Gradle | 8.5 |
+| Target Device | Android 8.0+ (API 26) |
 
 ### Build & Install
 
@@ -47,81 +92,81 @@ cd binti2
 # Build debug APK
 ./gradlew assembleDebug
 
-# Install on device
+# Install on connected device
 ./gradlew installDebug
+
+# Run lint checks
+./gradlew lint
+
+# Run unit tests
+./gradlew test
 ```
 
 ### First Run Setup
 
-1. Open Binti app
-2. Grant required permissions:
-   - 🎤 Microphone
-   - 🔲 Display over apps
-   - ♿ Accessibility service
-   - 🔔 Notifications (Android 13+)
-3. Download AI models (~160MB) or choose cloud-only mode
-4. Say **"يا بنتي"** to activate!
+1. **Open Binti app** on your BYD vehicle or Android device
+2. **Grant required permissions**:
+   - 🎤 **Microphone** - For voice recognition
+   - 🔲 **Display over apps** - For voice feedback overlay
+   - ♿ **Accessibility service** - For DiLink integration
+   - 🔔 **Notifications** - For foreground service (Android 13+)
+3. **Download AI models** (~165MB) when prompted, or choose cloud-only mode
+4. **Say "يا بنتي"** to activate!
 
 ---
 
 ## 💬 Supported Commands
 
 ### Air Conditioning
+
 | Arabic Command | English Translation | Action |
 |----------------|---------------------|--------|
-| يا بنتي، شغلي التكييف | Turn on AC | AC On |
-| يا بنتي، طفي التكييف | Turn off AC | AC Off |
+| يا بنتي، شغلي التكييف | Turn on AC | AC Power On |
+| يا بنتي، طفي التكييف | Turn off AC | AC Power Off |
 | يا بنتي، زيود الحرارة | Increase temperature | Temp +1°C |
-| يا بنتي، التكييف على درجة 22 | Set AC to 22 degrees | Set temp |
+| يا بنتي، قلل الحرارة | Decrease temperature | Temp -1°C |
+| يا بنتي، التكييف على درجة 22 | Set AC to 22 degrees | Set Temperature |
+| يا بنتي، تكييف بارد | Cool mode | AC Mode: Cool |
+| يا بنتي، تكييف ساخن | Heat mode | AC Mode: Heat |
 
 ### Navigation
+
 | Arabic Command | English Translation | Action |
 |----------------|---------------------|--------|
-| يا بنتي، خديني للبيت | Take me home | Navigate home |
-| يا بنتي، أقرب بنزين | Nearest gas station | POI search |
-| يا بنتي، خديني لـ[مكان] | Take me to [place] | Navigate |
+| يا بنتي، خديني للبيت | Take me home | Navigate to saved home |
+| يا بنتي، خديني للشغل | Take me to work | Navigate to saved work |
+| يا بنتي، أقرب بنزين | Nearest gas station | POI: Gas Station |
+| يا بنتي، أقرب شحن | Nearest charging station | POI: EV Charging |
+| يا بنتي، أقرب مطعم | Nearest restaurant | POI: Restaurant |
+| يا بنتي، أقرب مستشفى | Nearest hospital | POI: Hospital |
+| يا بنتي، خديني لـ[مكان] | Take me to [place] | Custom destination |
 
-### Media
+### Media Control
+
 | Arabic Command | English Translation | Action |
 |----------------|---------------------|--------|
-| يا بنتي، شغلي موسيقى | Play music | Media play |
-| يا بنتي، وقفة الأغنية | Pause the song | Media pause |
-| يا بنتي، اللي بعدها | Next one | Next track |
+| يا بنتي، شغلي موسيقى | Play music | Media Play |
+| يا بنتي، وقفة الأغنية | Pause the song | Media Pause |
+| يا بنتي، اللي بعدها | Next one | Media Next |
+| يا بنتي، اللي قبلها | Previous one | Media Previous |
+| يا بنتي، صوت عالي | Volume up | Volume Increase |
+| يا بنتي، صوت واطي | Volume down | Volume Decrease |
 
----
+### Phone
 
-## 🏗️ Architecture
+| Arabic Command | English Translation | Action |
+|----------------|---------------------|--------|
+| يا بنتي، كلم أحمد | Call Ahmed | Contact Call |
+| يا بنتي، رد عالمكالمة | Answer the call | Answer Call |
+| يا بنتي، أقفل المكالمة | End the call | End Call |
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     User Voice Input                     │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  Wake Word Detector (TFLite CNN)                        │
-│  "يا بنتي" → Trigger                                     │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  Voice Processor (Vosk / Huawei ML Kit)                 │
-│  Speech → Egyptian Arabic Text                          │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  Intent Classifier (EgyBERT-tiny)                       │
-│  Text → Intent + Entities                               │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  DiLink Command Executor                                │
-│  Intent → Accessibility Actions / Intents               │
-└────────────────────────┬────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  Egyptian TTS (Coqui / Huawei ML Kit)                   │
-│  Response → Egyptian Female Voice                       │
-└─────────────────────────────────────────────────────────┘
-```
+### Information
+
+| Arabic Command | English Translation | Action |
+|----------------|---------------------|--------|
+| يا بنتي، الساعة كام | What time is it? | Tell Time |
+| يا بنتي، حرارة بره إيه | What's the outside temperature? | Weather Info |
+| يا بنتي، البطارية كام | What's the battery level? | Battery Status |
 
 ---
 
@@ -130,11 +175,92 @@ cd binti2
 | Component | Primary (Offline) | License | Size | Cloud Fallback |
 |-----------|-------------------|---------|------|----------------|
 | Wake Word | Custom TFLite CNN | MIT | ~5 MB | N/A |
-| ASR | Vosk Egyptian | Apache 2.0 | ~50 MB | Huawei ML Kit |
-| NLU | EgyBERT-tiny | MIT | ~30 MB | Custom API |
-| TTS | Coqui Egyptian Female | MPL 2.0 | ~80 MB | Huawei TTS |
+| ASR | Vosk Egyptian Arabic | Apache 2.0 | ~50 MB | Huawei ML Kit ASR |
+| NLU | EgyBERT-tiny + Rules | MIT | ~30 MB | Custom API |
+| TTS | Coqui Egyptian Female | MPL 2.0 | ~80 MB | Huawei ML Kit TTS |
 
 **Total offline models: ~165MB compressed**
+
+---
+
+## 📁 Project Structure
+
+```
+binti2/
+├── app/
+│   ├── src/main/
+│   │   ├── java/com/binti/dilink/
+│   │   │   ├── BintiApplication.kt          # App initialization, HMS setup
+│   │   │   ├── BintiService.kt              # Foreground voice service
+│   │   │   ├── MainActivity.kt              # Permission setup wizard
+│   │   │   ├── voice/
+│   │   │   │   ├── WakeWordDetector.kt      # TFLite wake word detection
+│   │   │   │   └── VoiceProcessor.kt        # Vosk/Huawei ASR
+│   │   │   ├── nlp/
+│   │   │   │   └── IntentClassifier.kt      # NLU + entity extraction
+│   │   │   ├── dilink/
+│   │   │   │   ├── DiLinkCommandExecutor.kt # Command execution
+│   │   │   │   └── DiLinkAccessibilityService.kt # UI automation
+│   │   │   ├── response/
+│   │   │   │   └── EgyptianTTS.kt           # TTS engine
+│   │   │   ├── utils/
+│   │   │   │   ├── ModelManager.kt          # Model download/verification
+│   │   │   │   └── HMSUtils.kt              # Huawei services helper
+│   │   │   └── receivers/
+│   │   │       └── BootReceiver.kt          # Auto-start on boot
+│   │   ├── res/
+│   │   │   ├── values/strings.xml           # English strings
+│   │   │   ├── values-ar/strings.xml        # Egyptian Arabic strings
+│   │   │   ├── layout/                      # UI layouts
+│   │   │   ├── drawable/                    # Icons and graphics
+│   │   │   └── xml/                         # Config files
+│   │   ├── assets/
+│   │   │   ├── commands/
+│   │   │   │   └── dilink_intent_map.json   # Intent patterns
+│   │   │   └── models/README.md             # Model download info
+│   │   └── AndroidManifest.xml              # Permissions, services
+│   ├── build.gradle.kts                     # App dependencies
+│   └── proguard-rules.pro                   # ProGuard configuration
+├── gradle/
+│   └── wrapper/
+│       ├── gradle-wrapper.jar               # Gradle wrapper binary
+│       └── gradle-wrapper.properties        # Gradle version config
+├── .github/workflows/
+│   └── ci.yml                               # CI/CD pipeline
+├── build.gradle.kts                         # Project-level config
+├── settings.gradle.kts                      # Repository config
+├── gradle.properties                        # JVM settings
+├── README.md                                # This file
+├── CHANGELOG.md                             # Version history
+├── CONTRIBUTING.md                          # Contribution guidelines
+└── LICENSE                                  # MIT License
+```
+
+---
+
+## 🔧 CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration:
+
+### Workflow Jobs
+
+| Job | Trigger | Description |
+|-----|---------|-------------|
+| `validate` | Push/PR | Validate Gradle wrapper, check model sizes, verify Arabic strings |
+| `build` | After validate | Build debug APK, run unit tests, run lint |
+| `release` | Release created | Build signed release APK, upload to GitHub Releases |
+| `model-pack` | Release created | Create and upload model manifest |
+
+### Required GitHub Secrets
+
+For release builds, configure these secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `KEYSTORE_BASE64` | Base64-encoded signing keystore |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Key alias name |
+| `KEY_PASSWORD` | Key password |
 
 ---
 
@@ -142,55 +268,31 @@ cd binti2
 
 Binti is designed for Huawei HMS devices commonly found in BYD vehicles.
 
-### Setup
+### Setup Steps
 
 1. Register at [Huawei Developer](https://developer.huawei.com)
-2. Create app in AppGallery Connect
-3. Add `agconnect-services.json` to `app/` directory
-4. Configure signing certificate
+2. Create an app in [AppGallery Connect](https://developer.huawei.com/consumer/en/service/hms/catalog/agc.html)
+3. Download `agconnect-services.json` and place in `app/` directory
+4. Configure signing certificate in AppGallery Connect
+5. Build release APK and upload to AppGallery
+
+### Huawei HMS Services Used
+
+| Service | Purpose |
+|---------|---------|
+| ML Kit ASR | Cloud speech recognition fallback |
+| ML Kit TTS | Cloud text-to-speech fallback |
+| HMS Core | Device identification |
 
 ---
 
-## 🛠️ Development
+## 🔐 Security Features
 
-### Project Structure
-
-```
-binti2/
-├── app/
-│   ├── src/main/
-│   │   ├── java/com/binti/dilink/
-│   │   │   ├── BintiApplication.kt      # App initialization
-│   │   │   ├── BintiService.kt          # Voice service
-│   │   │   ├── MainActivity.kt          # Setup wizard
-│   │   │   ├── voice/
-│   │   │   │   ├── WakeWordDetector.kt  # "يا بنتي" detection
-│   │   │   │   └── VoiceProcessor.kt    # ASR
-│   │   │   ├── nlp/
-│   │   │   │   └── IntentClassifier.kt  # NLU
-│   │   │   ├── dilink/
-│   │   │   │   ├── DiLinkCommandExecutor.kt
-│   │   │   │   └── DiLinkAccessibilityService.kt
-│   │   │   └── response/
-│   │   │       └── EgyptianTTS.kt       # TTS
-│   │   └── res/
-│   │       ├── values/strings.xml       # English
-│   │       └── values-ar/strings.xml    # Egyptian Arabic
-│   └── build.gradle.kts
-├── gradle/
-├── scripts/
-│   ├── quantize_models.py
-│   └── test_dilink_commands.py
-└── .github/workflows/
-    └── ci.yml
-```
-
-### Running Tests
-
-```bash
-./gradlew test
-./gradlew connectedAndroidTest
-```
+- ✅ **HTTPS-only** network connections (no cleartext traffic)
+- ✅ **SHA256 verification** for downloaded models
+- ✅ **ProGuard/R8** code obfuscation for release builds
+- ✅ **Foreground service** with proper notification for Android 14+
+- ✅ **Privacy-first** - all voice processing happens on-device after model download
 
 ---
 
@@ -198,13 +300,14 @@ binti2/
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Areas for Contribution
+### Priority Areas
 
 - 🎙️ Additional wake word training data
 - 📝 More Egyptian Arabic commands and responses
-- 🌍 Support for other Arabic dialects
-- 🔧 DiLink integration improvements
-- 📚 Documentation and tutorials
+- 🌍 Support for other Arabic dialects (Levantine, Gulf, Maghrebi)
+- 🔧 DiLink integration improvements for specific BYD models
+- 📚 Documentation translations
+- 🐛 Bug fixes and performance improvements
 
 ---
 
@@ -214,12 +317,14 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ### Third-Party Licenses
 
-- Vosk - Apache 2.0
-- TensorFlow Lite - Apache 2.0
-- ONNX Runtime - MIT
-- CAMeL Tools - MIT
-- Coqui TTS - MPL 2.0
-- Huawei HMS - See [Huawei SDK Agreement](https://developer.huawei.com/consumer/en/doc/development/HMS-Core-Guides/android-license-0000001058069715)
+| Library | License |
+|---------|---------|
+| Vosk | Apache 2.0 |
+| TensorFlow Lite | Apache 2.0 |
+| ONNX Runtime | MIT |
+| CAMeL Tools | MIT |
+| Coqui TTS | MPL 2.0 |
+| Huawei HMS | [Huawei SDK Agreement](https://developer.huawei.com/consumer/en/doc/development/HMS-Core-Guides/android-license-0000001058069715) |
 
 ---
 
@@ -227,19 +332,24 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 **Dr. Waleed Mandour**
 
-- GitHub: [@waleedmandour](https://github.com/waleedmandour)
+- 📧 Email: waleedmandour@gmail.com; w.abumandour@squ.edu.om
+- 💻 GitHub: [@waleedmandour](https://github.com/waleedmandour)
+- 🏛️ Institution: Sultan Qaboos University
 
 ---
 
 ## 🙏 Acknowledgments
 
-- [Vosk](https://alphacephei.com/vosk/) for offline speech recognition
-- [CAMeL Lab](https://camel.abudhabi.nyu.edu/) for Egyptian Arabic NLP tools
-- [Coqui](https://coqui.ai/) for TTS framework
-- [Huawei Developer](https://developer.huawei.com) for HMS Core ML Kit
+- [Vosk](https://alphacephei.com/vosk/) - Offline speech recognition
+- [CAMeL Lab](https://camel.abudhabi.nyu.edu/) - Egyptian Arabic NLP tools
+- [Coqui](https://coqui.ai/) - TTS framework
+- [Huawei Developer](https://developer.huawei.com) - HMS Core ML Kit
+- [BYD Auto](https://www.byd.com) - DiLink platform
 
 ---
 
 <div align="center">
   <b>بنتي - مساعدك الشخصي في سيارتك 🚗✨</b>
+  <br/>
+  <i>Binti - Your personal assistant in your car</i>
 </div>

@@ -53,7 +53,6 @@ class VoiceProcessor(private val context: Context) {
 
     // Vosk components
     private var voskModel: Model? = null
-    private var speechService: SpeechService? = null
     
     // Huawei ML Kit ASR (fallback)
     private var huaweiAsrRecognizer: MLAsrRecognizer? = null
@@ -330,9 +329,6 @@ class VoiceProcessor(private val context: Context) {
      * Release resources
      */
     fun release() {
-        speechService?.shutdown()
-        speechService = null
-        
         voskModel?.close()
         voskModel = null
         
