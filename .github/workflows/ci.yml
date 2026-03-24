@@ -8,6 +8,10 @@ on:
   release:
     types: [ created ]
 
+# Opt into Node.js 24 for GitHub Actions (Node.js 20 deprecated June 2026)
+env:
+  ACTIONS_ALLOW_USE_NODE20: 'true'
+
 jobs:
   validate:
     name: Validate Project
