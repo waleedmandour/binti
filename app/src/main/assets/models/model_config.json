@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-01",
+  "min_app_version": "1.0.0",
+  "models": [
+    {
+      "id": "wake_word",
+      "name": "Wake Word Detector",
+      "description": "Detects 'يا بنتي' wake word",
+      "file": "ya_binti_detector.tflite",
+      "download_url": "${B2_BASE_URL}/wake/ya_binti_detector.tflite",
+      "size_mb": 5,
+      "sha256": "",
+      "required": true,
+      "extract": false,
+      "relative_path": "models/wake",
+      "training_info": {
+        "model_type": "TFLite CNN",
+        "sample_rate": 16000,
+        "frame_size_ms": 1000,
+        "hop_size_ms": 500,
+        "mfcc_features": 40,
+        "confidence_threshold": 0.85
+      }
+    },
+    {
+      "id": "asr_arabic",
+      "name": "Arabic ASR (Vosk MGB2)",
+      "description": "Modern Standard Arabic speech recognition",
+      "file": "vosk-model-ar-mgb2.zip",
+      "download_url": "${B2_BASE_URL}/asr/vosk-model-ar-mgb2.zip",
+      "size_mb": 1247,
+      "sha256": "",
+      "required": true,
+      "extract": true,
+      "relative_path": "models",
+      "notes": "Large model - recommend WiFi for download",
+      "source": "https://alphacephei.com/vosk/models"
+    },
+    {
+      "id": "nlu_classifier",
+      "name": "Intent Classifier (EgyBERT)",
+      "description": "Egyptian Arabic intent classification",
+      "file": "egybert_tiny_int8.onnx",
+      "download_url": "${B2_BASE_URL}/nlu/egybert_tiny_int8.onnx",
+      "size_mb": 25,
+      "sha256": "",
+      "required": true,
+      "extract": false,
+      "relative_path": "models/nlu",
+      "training_info": {
+        "base_model": "aubmindlab/bert-base-arabertv02",
+        "quantization": "int8",
+        "labels": ["AC_CONTROL", "NAVIGATION", "MEDIA", "PHONE", "INFO", "SYSTEM"]
+      }
+    },
+    {
+      "id": "tts_voice",
+      "name": "Egyptian TTS Voice",
+      "description": "Egyptian female voice for text-to-speech",
+      "file": "ar-eg-female.zip",
+      "download_url": "${B2_BASE_URL}/tts/ar-eg-female.zip",
+      "size_mb": 80,
+      "sha256": "",
+      "required": false,
+      "extract": true,
+      "relative_path": "voices",
+      "training_info": {
+        "framework": "Coqui TTS",
+        "voice_type": "female",
+        "dialect": "Egyptian Arabic",
+        "sample_rate": 22050
+      }
+    },
+    {
+      "id": "intent_map",
+      "name": "Intent Pattern Map",
+      "description": "JSON mapping of commands to intents",
+      "file": "dilink_intent_map.json",
+      "download_url": "${B2_BASE_URL}/nlp/dilink_intent_map.json",
+      "size_mb": 0,
+      "sha256": "",
+      "required": true,
+      "extract": false,
+      "relative_path": "assets/commands"
+    }
+  ],
+  "total_size_mb": 1357,
+  "hosting": {
+    "provider": "Backblaze B2",
+    "bucket": "binti2-models",
+    "base_url": "https://f001.backblazeb2.com/file/binti2-models",
+    "region": "us-west-004"
+  },
+  "download_options": {
+    "wifi_only_recommended": true,
+    "show_size_warning_above_mb": 500,
+    "resume_supported": true
+  }
+}

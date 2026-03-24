@@ -175,11 +175,75 @@ cd binti2
 | Component | Primary (Offline) | License | Size | Cloud Fallback |
 |-----------|-------------------|---------|------|----------------|
 | Wake Word | Custom TFLite CNN | MIT | ~5 MB | N/A |
-| ASR | Vosk Egyptian Arabic | Apache 2.0 | ~50 MB | Huawei ML Kit ASR |
-| NLU | EgyBERT-tiny + Rules | MIT | ~30 MB | Custom API |
+| ASR | Vosk Arabic MGB2 | Apache 2.0 | ~1.2 GB | Huawei ML Kit ASR |
+| NLU | EgyBERT-tiny + Rules | MIT | ~25 MB | Rule-based |
 | TTS | Coqui Egyptian Female | MPL 2.0 | ~80 MB | Huawei ML Kit TTS |
 
-**Total offline models: ~165MB compressed**
+**Total offline models: ~1.4GB compressed**
+
+---
+
+## 📥 Model Download (Backblaze B2)
+
+Binti uses **Backblaze B2** for hosting AI models. Models are downloaded on first run for offline privacy.
+
+### Quick Setup
+
+1. **Create Backblaze B2 Account** (Free: 10GB storage)
+   - Sign up at [backblaze.com/b2](https://www.backblaze.com/b2/sign-up.html)
+
+2. **Create a Public Bucket**
+   ```bash
+   # Install B2 CLI
+   pip install b2
+   
+   # Authenticate with your keys
+   b2 authorize-account <keyID> <applicationKey>
+   
+   # Create bucket
+   b2 create-bucket binti2-models allPublic
+   ```
+
+3. **Upload Models**
+   ```bash
+   # Run upload script
+   export B2_BUCKET=binti2-models
+   ./scripts/upload_models_to_b2.sh
+   ```
+
+### Model Files Required
+
+| File | B2 Path | Size | Source |
+|------|---------|------|--------|
+| `ya_binti_detector.tflite` | `wake/` | 5MB | Train custom |
+| `vosk-model-ar-mgb2.zip` | `asr/` | 1.2GB | [Download](https://alphacephei.com/vosk/models) |
+| `egybert_tiny_int8.onnx` | `nlu/` | 25MB | Train custom |
+| `ar-eg-female.zip` | `tts/` | 80MB | Train custom |
+| `dilink_intent_map.json` | `nlp/` | 10KB | Included in project |
+
+### Download Pre-trained Vosk Arabic
+
+```bash
+# Download Arabic ASR model
+wget https://alphacephei.com/vosk/models/vosk-model-ar-mgb2-0.4.zip
+mv vosk-model-ar-mgb2-0.4.zip models_to_upload/vosk-model-ar-mgb2.zip
+
+# Upload to B2
+b2 upload-file binti2-models models_to_upload/vosk-model-ar-mgb2.zip asr/vosk-model-ar-mgb2.zip
+```
+
+### Update App Configuration
+
+Edit `ModelManager.kt`:
+
+```kotlin
+private const val B2_BASE_URL = 
+    "https://f001.backblazeb2.com/file/binti2-models"
+```
+
+### Detailed Guide
+
+See [docs/B2_MODEL_SETUP.md](docs/B2_MODEL_SETUP.md) for training instructions.
 
 ---
 

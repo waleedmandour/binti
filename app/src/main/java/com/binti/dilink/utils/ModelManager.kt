@@ -6,22 +6,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 /**
  * Model Download Manager
  * 
- * Manages downloading and verification of AI models from GitHub Releases.
+ * Manages downloading and verification of AI models from Backblaze B2.
  * 
- * Models:
+ * Models (Total: ~1.4GB):
  * - Wake Word: ya_binti_detector.tflite (~5MB)
- * - ASR: vosk-model-egyptian (~50MB)
- * - NLU: egybert_tiny_int8.tflite (~30MB)
- * - TTS: ar-EG-female voice (~80MB)
- * 
- * Total: ~165MB compressed
+ * - ASR: vosk-model-ar-mgb2 (~1.2GB) - Modern Standard Arabic
+ * - NLU: egybert_tiny_int8.onnx (~25MB)
+ * - TTS: ar-eg-female voice (~80MB)
  * 
  * @author Dr. Waleed Mandour
  */
@@ -30,59 +30,79 @@ class ModelManager(private val context: Context) {
     companion object {
         private const val TAG = "ModelManager"
         
-        // GitHub Releases base URL
-        private const val GITHUB_RELEASES_URL = 
-            "https://github.com/waleedmandour/binti2/releases/download"
+        // Backblaze B2 Configuration
+        // Replace with your actual B2 bucket URL
+        private const val B2_BASE_URL = 
+            "https://f001.backblazeb2.com/file/binti2-models"
         
-        // Model version
-        private const val MODEL_VERSION = "v1.0.0"
+        // Manifest URL
+        private const val MANIFEST_URL = "$B2_BASE_URL/manifest.json"
         
-        // Model definitions
+        // Model definitions with actual B2 URLs
         val MODELS = listOf(
             ModelDefinition(
                 name = "Wake Word Detector",
                 fileName = "ya_binti_detector.tflite",
+                downloadUrl = "$B2_BASE_URL/wake/ya_binti_detector.tflite",
                 relativePath = "models/wake",
                 sizeMB = 5,
-                sha256 = "placeholder_sha256",
-                required = true
-            ),
-            ModelDefinition(
-                name = "Egyptian ASR",
-                fileName = "vosk-model-egyptian.zip",
-                relativePath = "models",
-                sizeMB = 50,
-                sha256 = "placeholder_sha256",
+                sha256 = "compute_after_upload",
                 required = true,
-                extract = true
+                description = "Detects 'يا بنتي' wake word"
             ),
             ModelDefinition(
-                name = "Intent Classifier",
-                fileName = "egybert_tiny_int8.tflite",
+                name = "Arabic ASR (Vosk MGB2)",
+                fileName = "vosk-model-ar-mgb2.zip",
+                downloadUrl = "$B2_BASE_URL/asr/vosk-model-ar-mgb2.zip",
+                relativePath = "models",
+                sizeMB = 1247,
+                sha256 = "compute_after_upload",
+                required = true,
+                extract = true,
+                description = "Arabic speech recognition model"
+            ),
+            ModelDefinition(
+                name = "Intent Classifier (EgyBERT)",
+                fileName = "egybert_tiny_int8.onnx",
+                downloadUrl = "$B2_BASE_URL/nlu/egybert_tiny_int8.onnx",
                 relativePath = "models/nlu",
-                sizeMB = 30,
-                sha256 = "placeholder_sha256",
-                required = true
+                sizeMB = 25,
+                sha256 = "compute_after_upload",
+                required = true,
+                description = "Egyptian Arabic intent classification"
             ),
             ModelDefinition(
                 name = "Egyptian TTS Voice",
                 fileName = "ar-eg-female.zip",
+                downloadUrl = "$B2_BASE_URL/tts/ar-eg-female.zip",
                 relativePath = "voices",
                 sizeMB = 80,
-                sha256 = "placeholder_sha256",
+                sha256 = "compute_after_upload",
                 required = false,
-                extract = true
+                extract = true,
+                description = "Egyptian female voice for TTS"
+            ),
+            ModelDefinition(
+                name = "Intent Patterns",
+                fileName = "dilink_intent_map.json",
+                downloadUrl = "$B2_BASE_URL/nlp/dilink_intent_map.json",
+                relativePath = "assets/commands",
+                sizeMB = 0,
+                sha256 = "compute_after_upload",
+                required = true,
+                description = "Intent patterns for command matching"
             )
         )
     }
 
-    // HTTP client
+    // HTTP client with longer timeouts for large files
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
     
-    // Model directory
+    // Model directory in app's files directory
     private val modelsDir = File(context.filesDir, "models")
 
     /**
@@ -93,15 +113,18 @@ class ModelManager(private val context: Context) {
         var totalSize = 0L
         
         for (model in MODELS) {
-            val modelFile = File(modelsDir, "${model.relativePath}/${model.fileName}")
+            val modelFile = File(context.filesDir, "${model.relativePath}/${model.fileName}")
             if (modelFile.exists() && verifyModel(model, modelFile)) {
                 readyCount++
                 totalSize += modelFile.length()
+                Log.d(TAG, "✅ ${model.name}: Ready")
+            } else {
+                Log.d(TAG, "❌ ${model.name}: Missing or invalid")
             }
         }
         
         val requiredReady = MODELS.filter { it.required }.count { model ->
-            val modelFile = File(modelsDir, "${model.relativePath}/${model.fileName}")
+            val modelFile = File(context.filesDir, "${model.relativePath}/${model.fileName}")
             modelFile.exists() && verifyModel(model, modelFile)
         }
         
@@ -112,7 +135,7 @@ class ModelManager(private val context: Context) {
             allModelsReady = readyCount == MODELS.size,
             partialModelsReady = requiredReady == MODELS.count { it.required },
             missingModels = MODELS.filter { model ->
-                val modelFile = File(modelsDir, "${model.relativePath}/${model.fileName}")
+                val modelFile = File(context.filesDir, "${model.relativePath}/${model.fileName}")
                 !modelFile.exists() || !verifyModel(model, modelFile)
             }
         )
@@ -127,13 +150,14 @@ class ModelManager(private val context: Context) {
         onError: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            Log.i(TAG, "Starting model download...")
+            Log.i(TAG, "🚀 Starting model download from Backblaze B2...")
             
             // Ensure models directory exists
             modelsDir.mkdirs()
             
             var totalProgress = 0
             val totalModels = MODELS.size
+            var downloadedCount = 0
             
             for ((index, model) in MODELS.withIndex()) {
                 onProgress(
@@ -141,19 +165,20 @@ class ModelManager(private val context: Context) {
                     model.name
                 )
                 
-                val modelFile = File(modelsDir, "${model.relativePath}/${model.fileName}")
+                val modelFile = File(context.filesDir, "${model.relativePath}/${model.fileName}")
                 
                 // Skip if already downloaded and verified
                 if (modelFile.exists() && verifyModel(model, modelFile)) {
-                    Log.d(TAG, "Model ${model.name} already exists, skipping")
+                    Log.d(TAG, "✅ Model ${model.name} already exists, skipping")
                     totalProgress += 100
+                    downloadedCount++
                     continue
                 }
                 
                 // Create parent directory
                 modelFile.parentFile?.mkdirs()
                 
-                // Download model
+                // Download model with progress
                 downloadModel(model, modelFile) { progress ->
                     val overallProgress = ((index * 100) + progress) / totalModels
                     onProgress(overallProgress, model.name)
@@ -165,39 +190,53 @@ class ModelManager(private val context: Context) {
                 }
                 
                 totalProgress += 100
+                downloadedCount++
             }
             
-            Log.i(TAG, "✅ All models downloaded successfully")
+            Log.i(TAG, "✅ Downloaded $downloadedCount/${MODELS.size} models successfully")
             onComplete()
             
         } catch (e: Exception) {
-            Log.e(TAG, "Model download failed", e)
+            Log.e(TAG, "❌ Model download failed", e)
             onError(e.message ?: "Unknown error")
         }
     }
 
     /**
-     * Download a single model
+     * Download a single model with progress tracking
      */
     private suspend fun downloadModel(
         model: ModelDefinition,
         targetFile: File,
         onProgress: (Int) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val url = "$GITHUB_RELEASES_URL/$MODEL_VERSION/${model.fileName}"
-        Log.d(TAG, "Downloading from: $url")
+        Log.d(TAG, "📥 Downloading: ${model.name}")
+        Log.d(TAG, "   URL: ${model.downloadUrl}")
+        Log.d(TAG, "   Size: ~${model.sizeMB}MB")
         
         val request = Request.Builder()
-            .url(url)
+            .url(model.downloadUrl)
+            .header("User-Agent", "Binti/1.0 Android")
             .build()
         
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw Exception("Download failed: ${response.code}")
+                throw ModelDownloadException(
+                    "Download failed for ${model.name}: HTTP ${response.code}"
+                )
             }
             
-            val body = response.body ?: throw Exception("Empty response body")
+            val body = response.body ?: throw ModelDownloadException("Empty response body")
             val contentLength = body.contentLength()
+            
+            // Check available storage
+            val availableSpace = targetFile.parentFile?.freeSpace ?: 0
+            if (contentLength > 0 && contentLength > availableSpace) {
+                throw ModelDownloadException(
+                    "Insufficient storage. Need ${contentLength / (1024*1024)}MB, " +
+                    "available ${availableSpace / (1024*1024)}MB"
+                )
+            }
             
             var totalRead = 0L
             val buffer = ByteArray(8192)
@@ -218,7 +257,7 @@ class ModelManager(private val context: Context) {
             }
         }
         
-        Log.d(TAG, "Downloaded ${model.name} to ${targetFile.absolutePath}")
+        Log.i(TAG, "✅ Downloaded ${model.name} (${totalRead / (1024*1024)}MB)")
     }
 
     /**
@@ -227,7 +266,7 @@ class ModelManager(private val context: Context) {
     private fun extractModel(model: ModelDefinition, zipFile: File) {
         if (!model.extract) return
         
-        Log.d(TAG, "Extracting ${model.name}...")
+        Log.d(TAG, "📦 Extracting ${model.name}...")
         
         try {
             val targetDir = zipFile.parentFile
@@ -235,6 +274,12 @@ class ModelManager(private val context: Context) {
                 var entry: java.util.zip.ZipEntry?
                 while (zis.nextEntry.also { entry = it } != null) {
                     val entryFile = File(targetDir, entry!!.name)
+                    
+                    // Security: prevent zip slip
+                    val canonicalPath = entryFile.canonicalPath
+                    if (!canonicalPath.startsWith(targetDir!!.canonicalPath)) {
+                        throw SecurityException("Zip slip detected")
+                    }
                     
                     if (entry!!.isDirectory) {
                         entryFile.mkdirs()
@@ -250,10 +295,10 @@ class ModelManager(private val context: Context) {
             
             // Delete zip file after extraction
             zipFile.delete()
-            Log.d(TAG, "Extracted ${model.name}")
+            Log.i(TAG, "✅ Extracted ${model.name}")
             
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to extract ${model.name}", e)
+            Log.e(TAG, "❌ Failed to extract ${model.name}", e)
             throw e
         }
     }
@@ -264,9 +309,14 @@ class ModelManager(private val context: Context) {
     private fun verifyModel(model: ModelDefinition, file: File): Boolean {
         if (!file.exists()) return false
         
-        // Skip verification for placeholder SHA256
-        if (model.sha256 == "placeholder_sha256") {
-            return file.length() > 0
+        // Check file size (basic validation)
+        val fileSize = file.length()
+        if (fileSize == 0L) return false
+        
+        // If SHA256 is not computed yet, just check file exists and has content
+        if (model.sha256 == "compute_after_upload" || model.sha256.isBlank()) {
+            Log.d(TAG, "⚠️ SHA256 not set for ${model.name}, skipping hash verification")
+            return fileSize > 0
         }
         
         return try {
@@ -296,7 +346,8 @@ class ModelManager(private val context: Context) {
     fun deleteAllModels() {
         try {
             modelsDir.deleteRecursively()
-            Log.i(TAG, "All models deleted")
+            File(context.filesDir, "voices").deleteRecursively()
+            Log.i(TAG, "🗑️ All models deleted")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete models", e)
         }
@@ -306,10 +357,24 @@ class ModelManager(private val context: Context) {
      * Get models directory size
      */
     fun getModelsSize(): Long {
-        return modelsDir.walkTopDown()
-            .filter { it.isFile }
-            .map { it.length() }
-            .sum()
+        var totalSize = 0L
+        
+        for (model in MODELS) {
+            val modelFile = File(context.filesDir, "${model.relativePath}/${model.fileName}")
+            if (modelFile.exists()) {
+                totalSize += modelFile.length()
+            }
+        }
+        
+        return totalSize
+    }
+    
+    /**
+     * Get model file path for a specific model
+     */
+    fun getModelPath(modelName: String): File? {
+        val model = MODELS.find { it.name == modelName } ?: return null
+        return File(context.filesDir, "${model.relativePath}/${model.fileName}")
     }
 }
 
@@ -319,11 +384,13 @@ class ModelManager(private val context: Context) {
 data class ModelDefinition(
     val name: String,
     val fileName: String,
+    val downloadUrl: String,
     val relativePath: String,
     val sizeMB: Int,
     val sha256: String,
     val required: Boolean = false,
-    val extract: Boolean = false
+    val extract: Boolean = false,
+    val description: String = ""
 )
 
 /**
@@ -337,3 +404,8 @@ data class ModelStatus(
     val partialModelsReady: Boolean,
     val missingModels: List<ModelDefinition>
 )
+
+/**
+ * Custom exception for model download errors
+ */
+class ModelDownloadException(message: String) : Exception(message)
