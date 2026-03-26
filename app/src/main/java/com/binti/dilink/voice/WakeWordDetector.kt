@@ -68,7 +68,7 @@ class WakeWordDetector(private val context: Context) {
     
     private var lastDetectionTime = 0L
     private var consecutiveDetections = 0
-    private const val REQUIRED_CONSECUTIVE = 2
+    private val REQUIRED_CONSECUTIVE = 2
 
     /**
      * Initialize the wake word detector
