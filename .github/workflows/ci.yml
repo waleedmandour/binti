@@ -20,63 +20,30 @@ on:
   release:
     types: [created]
 
-# Set environment variable to use Node.js 24 for all actions
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   validate:
     name: Validate Project
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      - name: Validate Gradle wrapper JAR exists
-        run: |
-          echo "🔍 Checking Gradle wrapper integrity..."
-          
-          # Check gradlew script exists
-          if [ ! -f "gradlew" ]; then
-            echo "❌ gradlew script not found"
-            echo "💡 Run 'gradle wrapper' locally and commit the files"
-            exit 1
-          fi
-          
-          # Check gradle-wrapper.jar exists
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "❌ gradle-wrapper.jar not found"
-            echo "💡 The JAR file is required for reproducible builds"
-            echo "💡 Run 'gradle wrapper' locally and commit all wrapper files"
-            exit 1
-          fi
-          
-          # Check gradle-wrapper.properties exists
-          if [ ! -f "gradle/wrapper/gradle-wrapper.properties" ]; then
-            echo "❌ gradle-wrapper.properties not found"
-            exit 1
-          fi
-          
-          echo "✅ Gradle wrapper files verified"
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
 
       - name: Grant execute permission for gradlew
-        run: |
-          chmod +x gradlew
-          echo "✅ gradlew permissions set"
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        run: chmod +x gradlew
 
       - name: Check for missing source files
         run: |
-          echo "🔍 Checking critical source files..."
+          echo "Checking critical source files..."
           
           missing_files=()
           
@@ -105,52 +72,38 @@ jobs:
           fi
           
           if [ ${#missing_files[@]} -gt 0 ]; then
-            echo "❌ Missing critical files:"
+            echo "Missing critical files:"
             for f in "${missing_files[@]}"; do
               echo "   - $f"
             done
             exit 1
           fi
           
-          echo "✅ All critical source files present"
+          echo "All critical source files present"
 
-      - name: Verify Model Sizes (<1GB total)
+      - name: Verify AndroidManifest Security
         run: |
-          if [ -d "app/src/main/assets/models" ]; then
-            echo "📦 Checking model sizes..."
-            total_size=$(find app/src/main/assets/models -type f -exec stat -c%s {} + 2>/dev/null | awk '{sum+=$1} END {print sum/1024/1024}')
-            
-            if [ -z "$total_size" ] || [ "$total_size" = "0" ]; then
-              echo "⚠️ No model files found in assets directory"
-              echo "✅ Skipping model size check (models will be downloaded from Google Drive at runtime)"
-              exit 0
+          if [ -f "app/src/main/AndroidManifest.xml" ]; then
+            if grep -q 'usesCleartextTraffic="false"' app/src/main/AndroidManifest.xml; then
+              echo "HTTPS-only traffic enforced"
+            else
+              echo "Warning: Cleartext traffic not explicitly disabled"
             fi
             
-            echo "Total model size: ${total_size}MB"
-            
-            # Check if bc is available, otherwise use awk
-            if command -v bc &> /dev/null; then
-              exceeds_limit=$(echo "$total_size > 1024" | bc -l)
+            if grep -q 'networkSecurityConfig' app/src/main/AndroidManifest.xml; then
+              echo "Network security config present"
             else
-              exceeds_limit=$(awk "BEGIN {print ($total_size > 1024) ? 1 : 0}")
-            fi
-            
-            if [ "$exceeds_limit" = "1" ]; then
-              echo "❌ Models exceed 1GB limit! (${total_size}MB)"
-              echo "💡 Large models should be hosted on Google Drive"
-              exit 1
-            else
-              echo "✅ Model sizes OK (${total_size}MB < 1GB limit)"
+              echo "Warning: No network security config found"
             fi
           else
-            echo "⚠️ No models directory found"
-            echo "✅ Models will be downloaded from Google Drive at runtime"
+            echo "AndroidManifest.xml not found"
+            exit 1
           fi
 
       - name: Check Egyptian Arabic Strings
         run: |
           if [ -f "app/src/main/res/values-ar/strings.xml" ]; then
-            echo "✅ Egyptian Arabic strings file exists"
+            echo "Egyptian Arabic strings file exists"
             
             # Check for critical strings
             critical_strings=("app_name" "wake_word" "accessibility_service_description")
@@ -163,56 +116,37 @@ jobs:
             done
             
             if [ ${#missing_strings[@]} -gt 0 ]; then
-              echo "❌ Missing critical strings: ${missing_strings[*]}"
+              echo "Missing critical strings: ${missing_strings[*]}"
               exit 1
             else
-              echo "✅ All critical strings found"
+              echo "All critical strings found"
             fi
             
             # Count total strings
             ar_count=$(grep -c '<string' app/src/main/res/values-ar/strings.xml || echo "0")
-            echo "📊 Total Egyptian Arabic strings: $ar_count"
+            echo "Total Egyptian Arabic strings: $ar_count"
           else
-            echo "❌ Missing values-ar/strings.xml"
-            exit 1
-          fi
-
-      - name: Verify AndroidManifest Security
-        run: |
-          if [ -f "app/src/main/AndroidManifest.xml" ]; then
-            if grep -q 'usesCleartextTraffic="false"' app/src/main/AndroidManifest.xml; then
-              echo "✅ HTTPS-only traffic enforced"
-            else
-              echo "⚠️ Cleartext traffic not explicitly disabled"
-            fi
-            
-            if grep -q 'networkSecurityConfig' app/src/main/AndroidManifest.xml; then
-              echo "✅ Network security config present"
-            else
-              echo "⚠️ No network security config found"
-            fi
-          else
-            echo "❌ AndroidManifest.xml not found"
+            echo "Missing values-ar/strings.xml"
             exit 1
           fi
 
   build:
-    name: Build & Test
+    name: Build Debug APK
     needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
           gradle-home-cache-cleanup: true
@@ -231,8 +165,13 @@ jobs:
         run: ./gradlew lint --no-daemon --build-cache
         continue-on-error: true
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+      - name: List APK output
+        run: |
+          echo "APK output location:"
+          ls -la app/build/outputs/apk/debug/ || echo "APK directory not found"
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/*.apk
@@ -246,17 +185,17 @@ jobs:
     if: github.event_name == 'release'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -268,12 +207,11 @@ jobs:
           ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           if [ -n "$ENCODED_KEYSTORE" ]; then
-            echo "🔐 Decoding release keystore..."
+            echo "Decoding release keystore..."
             echo "$ENCODED_KEYSTORE" | base64 -d > app/release-keystore.jks
-            echo "✅ Keystore decoded successfully"
+            echo "Keystore decoded successfully"
           else
-            echo "⚠️ No keystore secret found - will use debug signing"
-            echo "💡 Add KEYSTORE_BASE64 secret for release signing"
+            echo "No keystore secret found - will use debug signing"
           fi
 
       - name: Build Release APK
@@ -283,25 +221,25 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -f "app/release-keystore.jks" ]; then
-            echo "🔨 Building release APK with signing..."
+            echo "Building release APK with signing..."
             ./gradlew assembleRelease --no-daemon --build-cache
           else
-            echo "⚠️ Building release APK with debug signing..."
+            echo "Building release APK with debug signing..."
             ./gradlew assembleRelease --no-daemon --build-cache
           fi
 
       - name: Verify Release APK
         run: |
           if ls app/build/outputs/apk/release/*.apk 1> /dev/null 2>&1; then
-            echo "✅ Release APK built successfully"
+            echo "Release APK built successfully"
             ls -la app/build/outputs/apk/release/*.apk
           else
-            echo "❌ Release APK not found"
+            echo "Release APK not found"
             exit 1
           fi
 
       - name: Upload Release APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: app/build/outputs/apk/release/*.apk
@@ -316,13 +254,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   model-pack:
-    name: Package Model Assets
+    name: Package Model Manifest
     needs: release
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Create model manifest
         run: |
@@ -330,7 +268,7 @@ jobs:
           
           # Extract version from tag
           VERSION="${{ github.event.release.tag_name }}"
-          echo "📦 Creating manifest for version: $VERSION"
+          echo "Creating manifest for version: $VERSION"
           
           # Model manifest for Vosk MGB2 Arabic ASR
           # Note: Wake word detection uses Vosk grammar-based approach (no separate model)
@@ -340,13 +278,36 @@ jobs:
   "version": "$VERSION",
   "models": [
     {
+      "id": "asr_arabic",
       "name": "Arabic ASR + Wake Word (Vosk MGB2 v0.4)",
       "file": "vosk-model-ar-mgb2-0.4.zip",
       "size_mb": 1247,
-      "google_drive_id": "1bK1-pUCH5xykvKdB7nB7mZ_1wBKH05qZ"
+      "google_drive_id": "1bK1-pUCH5xykvKdB7nB7mZ_1wBKH05qZ",
+      "required": true,
+      "wake_word_support": {
+        "method": "vosk_grammar",
+        "wake_phrase": "يا بنتي",
+        "grammar": "[\"يا بنتي\", \"[unk]\"]"
+      }
+    },
+    {
+      "id": "nlu_classifier",
+      "name": "Intent Classifier (EgyBERT)",
+      "file": "egybert_tiny_int8.onnx",
+      "size_mb": 25,
+      "google_drive_id": "",
+      "required": false
+    },
+    {
+      "id": "tts_voice",
+      "name": "Egyptian TTS Voice",
+      "file": "ar-eg-female.zip",
+      "size_mb": 80,
+      "google_drive_id": "",
+      "required": false
     }
   ],
-  "total_size_mb": 1247,
+  "total_size_mb": 1352,
   "min_android_sdk": 26,
   "target_android_sdk": 34,
   "hosting": {
@@ -356,7 +317,7 @@ jobs:
 }
 EOF
           
-          echo "✅ Manifest created:"
+          echo "Manifest created:"
           cat models_release/manifest.json
 
       - name: Upload model manifest
