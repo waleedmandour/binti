@@ -1,4 +1,15 @@
 # .github/workflows/ci.yml
+# Binti2 CI/CD Pipeline
+# 
+# This workflow handles:
+# - Project validation (manifest, strings, source files)
+# - Build and test automation
+# - Release APK generation and distribution
+# - Model asset packaging for Google Drive distribution
+#
+# Models are hosted on Google Drive with local USB/SD card fallback.
+# The app uses Vosk grammar-based wake word detection (no separate model needed).
+
 name: Binti2 CI/CD Pipeline
 
 on:
@@ -19,27 +30,89 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5  # Updated to v5 (Node.js 24)
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5  # Updated to v5 (Node.js 24)
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      - name: Grant execute permission for gradlew
+      - name: Validate Gradle wrapper JAR exists
         run: |
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            echo "✅ gradlew permissions set"
-          else
-            echo "❌ gradlew not found - make sure you've committed the Gradle wrapper"
+          echo "🔍 Checking Gradle wrapper integrity..."
+          
+          # Check gradlew script exists
+          if [ ! -f "gradlew" ]; then
+            echo "❌ gradlew script not found"
+            echo "💡 Run 'gradle wrapper' locally and commit the files"
             exit 1
           fi
+          
+          # Check gradle-wrapper.jar exists
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "❌ gradle-wrapper.jar not found"
+            echo "💡 The JAR file is required for reproducible builds"
+            echo "💡 Run 'gradle wrapper' locally and commit all wrapper files"
+            exit 1
+          fi
+          
+          # Check gradle-wrapper.properties exists
+          if [ ! -f "gradle/wrapper/gradle-wrapper.properties" ]; then
+            echo "❌ gradle-wrapper.properties not found"
+            exit 1
+          fi
+          
+          echo "✅ Gradle wrapper files verified"
+
+      - name: Grant execute permission for gradlew
+        run: |
+          chmod +x gradlew
+          echo "✅ gradlew permissions set"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4  # Updated to new path
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Check for missing source files
+        run: |
+          echo "🔍 Checking critical source files..."
+          
+          missing_files=()
+          
+          # Check essential project files
+          essential_files=(
+            "app/build.gradle.kts"
+            "build.gradle.kts"
+            "settings.gradle.kts"
+            "app/src/main/AndroidManifest.xml"
+          )
+          
+          for file in "${essential_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing_files+=("$file")
+            fi
+          done
+          
+          # Check for Kotlin source directory
+          if [ ! -d "app/src/main/java" ] && [ ! -d "app/src/main/kotlin" ]; then
+            missing_files+=("app/src/main/{java|kotlin} (source directory)")
+          fi
+          
+          # Check for resources directory
+          if [ ! -d "app/src/main/res" ]; then
+            missing_files+=("app/src/main/res (resources directory)")
+          fi
+          
+          if [ ${#missing_files[@]} -gt 0 ]; then
+            echo "❌ Missing critical files:"
+            for f in "${missing_files[@]}"; do
+              echo "   - $f"
+            done
+            exit 1
+          fi
+          
+          echo "✅ All critical source files present"
 
       - name: Verify Model Sizes (<1GB total)
         run: |
@@ -49,7 +122,7 @@ jobs:
             
             if [ -z "$total_size" ] || [ "$total_size" = "0" ]; then
               echo "⚠️ No model files found in assets directory"
-              echo "✅ Skipping model size check (models will be downloaded at runtime)"
+              echo "✅ Skipping model size check (models will be downloaded from Google Drive at runtime)"
               exit 0
             fi
             
@@ -64,14 +137,14 @@ jobs:
             
             if [ "$exceeds_limit" = "1" ]; then
               echo "❌ Models exceed 1GB limit! (${total_size}MB)"
-              echo "💡 Consider using Backblaze B2 for large models"
+              echo "💡 Large models should be hosted on Google Drive"
               exit 1
             else
               echo "✅ Model sizes OK (${total_size}MB < 1GB limit)"
             fi
           else
-            echo "⚠️ No models directory found - models will be downloaded at runtime"
-            echo "✅ Skipping model size validation"
+            echo "⚠️ No models directory found"
+            echo "✅ Models will be downloaded from Google Drive at runtime"
           fi
 
       - name: Check Egyptian Arabic Strings
@@ -102,19 +175,6 @@ jobs:
           else
             echo "❌ Missing values-ar/strings.xml"
             exit 1
-          fi
-
-      - name: Validate HMS Dependencies
-        run: |
-          if [ -f "app/build.gradle.kts" ]; then
-            if grep -q "com.huawei.hms" app/build.gradle.kts; then
-              echo "✅ HMS dependencies found"
-            else
-              echo "⚠️ No HMS dependencies found - Huawei fallback will be disabled"
-              echo "💡 Consider adding HMS dependencies for AppGallery compatibility"
-            fi
-          else
-            echo "⚠️ app/build.gradle.kts not found"
           fi
 
       - name: Verify AndroidManifest Security
@@ -151,26 +211,33 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+          gradle-home-cache-cleanup: true
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --build-cache
 
       - name: Run unit tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test --no-daemon --build-cache
         continue-on-error: true
 
       - name: Run lint
-        run: ./gradlew lint --no-daemon
+        run: ./gradlew lint --no-daemon --build-cache
         continue-on-error: true
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5  # Updated to v5 (Node.js 24)
+        uses: actions/upload-artifact@v5
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
+          if-no-files-found: error
 
   release:
     name: Build Release APK
@@ -187,6 +254,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -212,10 +284,20 @@ jobs:
         run: |
           if [ -f "app/release-keystore.jks" ]; then
             echo "🔨 Building release APK with signing..."
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease --no-daemon --build-cache
           else
             echo "⚠️ Building release APK with debug signing..."
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease --no-daemon --build-cache
+          fi
+
+      - name: Verify Release APK
+        run: |
+          if ls app/build/outputs/apk/release/*.apk 1> /dev/null 2>&1; then
+            echo "✅ Release APK built successfully"
+            ls -la app/build/outputs/apk/release/*.apk
+          else
+            echo "❌ Release APK not found"
+            exit 1
           fi
 
       - name: Upload Release APK
@@ -224,9 +306,10 @@ jobs:
           name: app-release
           path: app/build/outputs/apk/release/*.apk
           retention-days: 30
+          if-no-files-found: error
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2  # Updated to v2
+        uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/release/*.apk
         env:
@@ -249,42 +332,26 @@ jobs:
           VERSION="${{ github.event.release.tag_name }}"
           echo "📦 Creating manifest for version: $VERSION"
           
+          # Model manifest for Vosk MGB2 Arabic ASR
+          # Note: Wake word detection uses Vosk grammar-based approach (no separate model)
+          # The MGB2 model handles both ASR and wake word via grammar rules
           cat > models_release/manifest.json << EOF
 {
   "version": "$VERSION",
   "models": [
     {
-      "name": "Wake Word Detector",
-      "file": "ya_binti_detector.tflite",
-      "size_mb": 5,
-      "sha256": "placeholder"
-    },
-    {
-      "name": "Egyptian ASR (Vosk)",
-      "file": "vosk-model-egyptian.zip",
-      "size_mb": 50,
-      "sha256": "placeholder"
-    },
-    {
-      "name": "Intent Classifier (EgyBERT)",
-      "file": "egybert_tiny_int8.onnx",
+      "name": "Arabic ASR + Wake Word (Vosk MGB2 v0.4)",
+      "file": "vosk-model-ar-mgb2-0.4.zip",
       "size_mb": 1247,
-      "sha256": "placeholder"
-    },
-    {
-      "name": "Egyptian TTS Voice",
-      "file": "ar-eg-female.zip",
-      "size_mb": 80,
-      "sha256": "placeholder"
+      "google_drive_id": "1bK1-pUCH5xykvKdB7nB7mZ_1wBKH05qZ"
     }
   ],
-  "total_size_mb": 1382,
+  "total_size_mb": 1247,
   "min_android_sdk": 26,
   "target_android_sdk": 34,
   "hosting": {
-    "provider": "Backblaze B2",
-    "bucket": "binti2-models",
-    "base_url": "https://f001.backblazeb2.com/file/binti2-models"
+    "provider": "Google Drive",
+    "fallback": "Local USB/SD Card"
   }
 }
 EOF
