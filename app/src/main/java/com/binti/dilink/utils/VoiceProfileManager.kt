@@ -246,7 +246,7 @@ class VoiceProfileManager(private val context: Context) {
                     }
                 }
                 avgFeatures.indices.forEach { i ->
-                    avgFeatures[i] /= voiceSamples.size
+                    avgFeatures[i] = avgFeatures[i] / voiceSamples.size
                 }
 
                 // Save the averaged features

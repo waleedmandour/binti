@@ -429,7 +429,7 @@ class ModelManager(private val context: Context) {
             } else {
                 // No virus warning, content might be the actual file
                 // Check if it's actually the file by looking at content-type
-                val contentType = response.header("Content-Type", "")
+                val contentType = response.header("Content-Type", "") ?: ""
                 if (!contentType.contains("text/html")) {
                     // This is the actual file, save it
                     targetFile.writeText(htmlContent)
@@ -474,6 +474,8 @@ class ModelManager(private val context: Context) {
     ) = withContext(Dispatchers.IO) {
         Log.d(TAG, "📥 Downloading from URL: $url")
 
+        var totalRead = 0L
+        
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36")
@@ -497,7 +499,6 @@ class ModelManager(private val context: Context) {
                 )
             }
 
-            var totalRead = 0L
             val buffer = ByteArray(8192)
 
             FileOutputStream(targetFile).use { output ->
