@@ -206,9 +206,9 @@ class DiLinkCommandExecutor(private val context: Context) {
                 if (diff != 0) {
                     repeat(kotlin.math.abs(diff)) {
                         val buttonId = if (diff > 0) {
-                            DiLinkAccessibilityService.YuanPlus2023.ID_AC_TEMP_UP
+                            BYDModels.YuanPlus2023.ID_AC_TEMP_UP
                         } else {
-                            DiLinkAccessibilityService.YuanPlus2023.ID_AC_TEMP_DOWN
+                            BYDModels.YuanPlus2023.ID_AC_TEMP_DOWN
                         }
 
                         val button = service.findNodeById(buttonId)
@@ -247,13 +247,13 @@ class DiLinkCommandExecutor(private val context: Context) {
 
                 val (modeButtonId, modeNameAr) = when (mode.lowercase()) {
                     "cool", "تبريد", "بارده" ->
-                        DiLinkAccessibilityService.YuanPlus2023.ID_AC_MODE_COOL to "تبريد"
+                        BYDModels.YuanPlus2023.ID_AC_MODE_COOL to "تبريد"
                     "heat", "تدفئة", "دافئ" ->
-                        DiLinkAccessibilityService.YuanPlus2023.ID_AC_MODE_HEAT to "تدفئة"
+                        BYDModels.YuanPlus2023.ID_AC_MODE_HEAT to "تدفئة"
                     "fan", "مروحة", "تهوية" ->
-                        DiLinkAccessibilityService.YuanPlus2023.ID_AC_MODE_FAN to "تهوية"
+                        BYDModels.YuanPlus2023.ID_AC_MODE_FAN to "تهوية"
                     "auto", "تلقائي", "اوتوماتيك" ->
-                        DiLinkAccessibilityService.YuanPlus2023.ID_AC_MODE_AUTO to "تلقائي"
+                        BYDModels.YuanPlus2023.ID_AC_MODE_AUTO to "تلقائي"
                     else -> return CommandResult(false, "وضع غير معروف: $mode")
                 }
 
@@ -291,7 +291,7 @@ class DiLinkCommandExecutor(private val context: Context) {
                 }
 
                 val powerButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_AC_POWER
+                    BYDModels.YuanPlus2023.ID_AC_POWER
                 )
 
                 if (powerButton != null && service.performClick(powerButton)) {
@@ -331,9 +331,9 @@ class DiLinkCommandExecutor(private val context: Context) {
                 }
 
                 val buttonId = if (delta > 0) {
-                    DiLinkAccessibilityService.YuanPlus2023.ID_AC_TEMP_UP
+                    BYDModels.YuanPlus2023.ID_AC_TEMP_UP
                 } else {
-                    DiLinkAccessibilityService.YuanPlus2023.ID_AC_TEMP_DOWN
+                    BYDModels.YuanPlus2023.ID_AC_TEMP_DOWN
                 }
 
                 val button = service.findNodeById(buttonId)
@@ -365,7 +365,7 @@ class DiLinkCommandExecutor(private val context: Context) {
 
                 // Try to find fan speed slider/seekbar
                 val fanSlider = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_AC_FAN_SPEED
+                    BYDModels.YuanPlus2023.ID_AC_FAN_SPEED
                 )
 
                 if (fanSlider != null) {
@@ -375,7 +375,7 @@ class DiLinkCommandExecutor(private val context: Context) {
                     val progress = (speed / 7f * bounds.width()).toInt()
 
                     // Perform gesture to set position
-                    val x = bounds.left + progress
+                    val x = bounds.left.toFloat() + progress
                     val y = bounds.exactCenterY()
                     service.performGesture(x, y)
 
@@ -574,7 +574,7 @@ class DiLinkCommandExecutor(private val context: Context) {
         return try {
             accessibilityService?.let { service ->
                 val cancelButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_NAV_CANCEL
+                    BYDModels.YuanPlus2023.ID_NAV_CANCEL
                 )
                 if (cancelButton != null && service.performClick(cancelButton)) {
                     CommandResult(true, "تم إلغاء التنقل")
@@ -767,7 +767,7 @@ class DiLinkCommandExecutor(private val context: Context) {
             accessibilityService?.let { service ->
                 // Find and click the call button
                 val callButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_CALL
+                    BYDModels.YuanPlus2023.ID_PHONE_CALL
                 ) ?: service.findNodeFlexibly(contentDesc = "call")
 
                 if (callButton != null) {
@@ -799,7 +799,7 @@ class DiLinkCommandExecutor(private val context: Context) {
 
                 // Click on contacts tab
                 val contactsTab = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_CONTACTS
+                    BYDModels.YuanPlus2023.ID_PHONE_CONTACTS
                 )
                 if (contactsTab != null) {
                     service.performClick(contactsTab)
@@ -845,7 +845,7 @@ class DiLinkCommandExecutor(private val context: Context) {
             accessibilityService?.let { service ->
                 // Find answer button
                 val answerButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_ANSWER
+                    BYDModels.YuanPlus2023.ID_PHONE_ANSWER
                 ) ?: service.findNodeFlexibly(
                     id = "answer",
                     contentDesc = "answer",
@@ -878,7 +878,7 @@ class DiLinkCommandExecutor(private val context: Context) {
         return try {
             accessibilityService?.let { service ->
                 val rejectButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_REJECT
+                    BYDModels.YuanPlus2023.ID_PHONE_REJECT
                 ) ?: service.findNodeFlexibly(
                     id = "reject",
                     contentDesc = "reject",
@@ -911,7 +911,7 @@ class DiLinkCommandExecutor(private val context: Context) {
         return try {
             accessibilityService?.let { service ->
                 val endButton = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_END
+                    BYDModels.YuanPlus2023.ID_PHONE_END
                 ) ?: service.findNodeFlexibly(
                     id = "end",
                     contentDesc = "end",
@@ -947,7 +947,7 @@ class DiLinkCommandExecutor(private val context: Context) {
 
                 // Click on recent calls
                 val recentTab = service.findNodeById(
-                    DiLinkAccessibilityService.YuanPlus2023.ID_PHONE_RECENT
+                    BYDModels.YuanPlus2023.ID_PHONE_RECENT
                 )
                 if (recentTab != null) {
                     service.performClick(recentTab)
@@ -1104,7 +1104,7 @@ class DiLinkCommandExecutor(private val context: Context) {
                     Thread.sleep(500)
 
                     val rangeNode = service.findNodeById(
-                        DiLinkAccessibilityService.YuanPlus2023.ID_VEHICLE_RANGE
+                        BYDModels.YuanPlus2023.ID_VEHICLE_RANGE
                     )
                     val rangeText = rangeNode?.text?.toString()
 
