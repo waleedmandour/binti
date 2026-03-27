@@ -29,10 +29,17 @@ object HMSUtils {
     
     /**
      * Check if Huawei Mobile Services are available
-     * Note: Always returns false as HMS is not available in this build
      */
     fun isHuaweiServicesAvailable(context: Context): Boolean {
-        return false
+        return try {
+            val packageManager = context.packageManager
+            val packageInfo = packageManager.getPackageInfo("com.huawei.hwid", 0)
+            packageInfo != null
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        } catch (e: Exception) {
+            false
+        }
     }
     
     /**
@@ -76,15 +83,23 @@ object HMSUtils {
     /**
      * Get the preferred ASR provider based on device capabilities
      */
-    fun getPreferredASRProvider(): ASRProvider {
-        return ASRProvider.VOSK_OFFLINE
+    fun getPreferredASRProvider(context: Context): ASRProvider {
+        return if (isHuaweiServicesAvailable(context)) {
+            ASRProvider.HUAWEI_ML_KIT
+        } else {
+            ASRProvider.VOSK_OFFLINE
+        }
     }
     
     /**
      * Get the preferred TTS provider based on device capabilities
      */
-    fun getPreferredTTSProvider(): TTSProvider {
-        return TTSProvider.ANDROID_TTS
+    fun getPreferredTTSProvider(context: Context): TTSProvider {
+        return if (isHuaweiServicesAvailable(context)) {
+            TTSProvider.HUAWEI_ML_KIT
+        } else {
+            TTSProvider.ANDROID_TTS
+        }
     }
     
     /**
@@ -92,7 +107,7 @@ object HMSUtils {
      */
     enum class ASRProvider {
         VOSK_OFFLINE,       // Vosk Egyptian Arabic model
-        HUAWEI_ML_KIT,      // Huawei ML Kit Speech-to-Text (not available)
+        HUAWEI_ML_KIT,      // Huawei ML Kit Speech-to-Text
         GOOGLE_CLOUD        // Google Cloud Speech (future)
     }
     
@@ -101,7 +116,7 @@ object HMSUtils {
      */
     enum class TTSProvider {
         COQUI_OFFLINE,      // Coqui TTS Egyptian Female
-        HUAWEI_ML_KIT,      // Huawei ML Kit Text-to-Speech (not available)
+        HUAWEI_ML_KIT,      // Huawei ML Kit Text-to-Speech
         ANDROID_TTS         // Android TTS with Arabic locale
     }
 }

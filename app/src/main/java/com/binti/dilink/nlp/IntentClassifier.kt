@@ -144,7 +144,7 @@ class IntentClassifier(private val context: Context) {
             // Normalize yeh variants
             .replace("ى", "ي")
             // Normalize Egyptian colloquialisms
-            .replace("إزاي", "ازي")
+            .replace("إزاي", "ازاي")
             .replace("عشان", "عشان")
             .replace("مش", "مش")
             // Remove diacritics
@@ -176,7 +176,8 @@ class IntentClassifier(private val context: Context) {
                         entities = entities,
                         confidence = score,
                         originalText = text,
-                        matchedPattern = pattern.pattern
+                        matchedPattern = pattern.pattern,
+                        matchedPatternResponse = pattern.response
                     )
                 }
             }
@@ -190,7 +191,6 @@ class IntentClassifier(private val context: Context) {
      */
     private fun calculatePatternScore(text: String, pattern: IntentPattern): Float {
         val patternWords = pattern.keywords
-        val textWords = text.split(" ")
         
         var matchCount = 0
         var totalWeight = 0f
@@ -245,7 +245,7 @@ class IntentClassifier(private val context: Context) {
             
             "NAVIGATION" -> {
                 // Extract destination
-                val destKeywords = listOf("خديني", "روح", "أودي", "نروح")
+                val destKeywords = listOf("خديني", "روح", "أودي", "نروح", "ودني", "وصلني")
                 for (keyword in destKeywords) {
                     if (keyword in text) {
                         val destStart = text.indexOf(keyword) + keyword.length
@@ -349,10 +349,10 @@ class IntentClassifier(private val context: Context) {
             IntentPattern(
                 pattern = "شغل التكييف",
                 keywords = listOf(
-                    Keyword("شغل", 1.0f, listOf("تشغل", "افتح")),
+                    Keyword("شغل", 1.0f, listOf("تشغل", "افتح", "شغلي")),
                     Keyword("تكييف", 1.0f, listOf("تيكيف", "مكيف"))
                 ),
-                response = "تمام، شغلت التكييف"
+                response = "عنيا حاضر، شغلتلك التكييف يا باشا"
             ),
             IntentPattern(
                 pattern = "طفي التكييف",
@@ -360,45 +360,7 @@ class IntentClassifier(private val context: Context) {
                     Keyword("طفي", 1.0f, listOf("اطفي", "قفل", "سكر")),
                     Keyword("تكييف", 1.0f, listOf("تيكيف"))
                 ),
-                response = "تمام، طفيت التكييف"
-            ),
-            IntentPattern(
-                pattern = "زيود الحرارة",
-                keywords = listOf(
-                    Keyword("زيود", 1.0f, listOf("زود", "ارفع")),
-                    Keyword("حرارة", 1.0f, listOf("دفء"))
-                ),
-                response = "تمام، زودت الحرارة"
-            )
-        )
-        
-        intentPatterns["NAVIGATION"] = mutableListOf(
-            IntentPattern(
-                pattern = "خديني للبيت",
-                keywords = listOf(
-                    Keyword("خديني", 1.0f, listOf("ودني", "روح")),
-                    Keyword("بيت", 1.0f, listOf("منزل", "البيت"))
-                ),
-                response = "تمام، هوديك البيت"
-            ),
-            IntentPattern(
-                pattern = "أقرب بنزين",
-                keywords = listOf(
-                    Keyword("أقرب", 1.0f, listOf("اقرب")),
-                    Keyword("بنزين", 1.0f, listOf("محطة", "وقود"))
-                ),
-                response = "تمام، هوريك أقرب محطة بنزين"
-            )
-        )
-        
-        intentPatterns["MEDIA"] = mutableListOf(
-            IntentPattern(
-                pattern = "شغل موسيقى",
-                keywords = listOf(
-                    Keyword("شغل", 1.0f, listOf("اسمع")),
-                    Keyword("موسيقى", 1.0f, listOf("اغنية", "سماعي"))
-                ),
-                response = "تمام، شغلت الموسيقى"
+                response = "من عنيا، طفيت التكييف خلاص"
             )
         )
     }
@@ -415,7 +377,7 @@ class IntentClassifier(private val context: Context) {
         // Location extractor
         entityExtractors["location"] = EntityExtractor { text, _ ->
             // Extract location after keywords like "خديني", "روح"
-            val locationKeywords = listOf("خديني", "روح", "أودي", "نروح")
+            val locationKeywords = listOf("خديني", "روح", "أودي", "نروح", "ودني", "وصلني")
             for (keyword in locationKeywords) {
                 if (keyword in text) {
                     val start = text.indexOf(keyword) + keyword.length
@@ -470,5 +432,6 @@ data class IntentResult(
     val entities: Map<String, String>,
     val confidence: Float,
     val originalText: String,
-    val matchedPattern: String? = null
+    val matchedPattern: String? = null,
+    val matchedPatternResponse: String = ""
 )

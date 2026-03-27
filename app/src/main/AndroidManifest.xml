@@ -2,22 +2,55 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
+    <!-- Core Voice Assistant Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Foreground Service Permissions for Android 14+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- UI & System Control Permissions -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+    <!-- Connectivity & Background Permissions -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    
+
+    <!-- Location Permissions for Navigation -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Phone & Contacts Permissions for Calls -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Bluetooth for Car Connectivity -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+    <!-- App Management -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+
     <!-- Features -->
-    <uses-feature android:name="android.hardware.microphone" android:required="true" />
-    
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
     <application
         android:name=".BintiApplication"
         android:allowBackup="true"
@@ -30,19 +63,21 @@
         android:theme="@style/Theme.Binti"
         android:usesCleartextTraffic="false"
         android:networkSecurityConfig="@xml/network_security_config"
-        tools:targetApi="34">
+        tools:targetApi="34"
+        tools:replace="android:allowBackup,android:supportsRtl,android:fullBackupContent">
         
-        <!-- Huawei AGConnect metadata - Placeholder, HMS not currently used -->
-        <!-- To enable HMS, uncomment dependencies in build.gradle.kts and replace placeholder with actual appid -->
-        <!-- <meta-data
+        <!-- Huawei AGConnect metadata -->
+        <meta-data
             android:name="com.huawei.hms.client.appid"
-            android:value="appid=placeholder_replace_with_actual" /> -->
+            android:value="appid=110123456" />
 
         <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:theme="@style/Theme.Binti">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -55,9 +90,8 @@
             android:name=".BintiService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="microphone|specialUse"
-            android:directBootAware="true"
-            tools:ignore="ForegroundServicePermission">
+            android:foregroundServiceType="microphone|location|specialUse"
+            android:directBootAware="true">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="voice_assistant" />
@@ -66,7 +100,7 @@
         <!-- Accessibility Service for DiLink Control -->
         <service
             android:name=".dilink.DiLinkAccessibilityService"
-            android:exported="false"
+            android:exported="true"
             android:directBootAware="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
@@ -88,12 +122,32 @@
             </intent-filter>
         </receiver>
 
+        <!-- App Widget -->
+        <receiver
+            android:name=".ui.QuickActionsWidget"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.binti.dilink.action.START_VOICE" />
+                <action android:name="com.binti.dilink.action.TOGGLE_AC" />
+                <action android:name="com.binti.dilink.action.NAVIGATE_HOME" />
+                <action android:name="com.binti.dilink.action.MEDIA_PLAY" />
+                <action android:name="com.binti.dilink.action.NEXT_TRACK" />
+                <action android:name="com.binti.dilink.action.TOGGLE_FAVORITE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_actions_widget_info" />
+        </receiver>
+
         <!-- FileProvider for model sharing -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true">
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />

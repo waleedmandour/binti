@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.huawei.agconnect")
 }
 
 android {
@@ -12,17 +13,15 @@ android {
         applicationId = "com.binti.dilink"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // Enable native AI model support
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }
         
-        // VectorDrawables support
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -30,8 +29,6 @@ android {
 
     signingConfigs {
         create("release") {
-            // Only use environment variables - no hardcoded passwords
-            // If env vars are not set, release build will use debug signing
             storeFile = file("release-keystore.jks")
             storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
             keyAlias = System.getenv("KEY_ALIAS") ?: ""
@@ -43,11 +40,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            // Use release signing only if keystore exists and has valid credentials
-            // Otherwise fall back to debug signing
-            signingConfig = if (file("release-keystore.jks").exists() &&
-                !System.getenv("KEYSTORE_PASSWORD").isNullOrEmpty() &&
-                !System.getenv("KEY_PASSWORD").isNullOrEmpty()) {
+            signingConfig = if (file("release-keystore.jks").exists()) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
@@ -111,29 +104,23 @@ dependencies {
     // TensorFlow Lite for Wake Word & NLU
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0") // GPU delegate
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
     
-    // ONNX Runtime for ASR
+    // ONNX Runtime for ASR/NLU
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.16.3")
     
-    // Huawei HMS Core - AGConnect for AppGallery
-    // implementation("com.huawei.agconnect:agconnect-core:1.9.1.301")
+    // Huawei HMS Core - AGConnect
+    implementation("com.huawei.agconnect:agconnect-core:1.9.1.301")
     
-    // Huawei HMS Core - ML Kit for ASR/TTS fallback (commented out - packages not found in repo)
-    // implementation("com.huawei.hms:ml-speech-semantics-recognizer:3.8.0.301")
-    // implementation("com.huawei.hms:ml-tts:3.8.0.301")
-    // implementation("com.huawei.hms:ml-computer-voice-asr:3.8.0.301")
+    // Huawei HMS Core - ML Kit for ASR/TTS fallback
+    implementation("com.huawei.hms:ml-computer-voice-asr:3.11.0.301")
+    implementation("com.huawei.hms:ml-computer-voice-tts:3.11.0.301")
     
-    // Huawei Account & In-App Updates
-    // implementation("com.huawei.hms:hwid:6.12.0.300")
-    // implementation("com.huawei.updatesdk:updatesdk:6.12.0.300")
-    
-    // Vosk for offline ASR (Apache 2.0)
+    // Vosk for offline ASR
     implementation("com.alphacephei:vosk-android:0.3.47")
     
     // OkHttp for model downloads
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:okhttp-coroutines:5.0.0-alpha.12")
     
     // JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")
@@ -143,6 +130,3 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
-
-// Apply Huawei AGConnect plugin after Android plugin is configured
-// apply(plugin = "com.huawei.agconnect") // Commented out - HMS dependencies not available

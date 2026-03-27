@@ -1,263 +1,135 @@
 {
-  "version": "1.0.0",
+  "version": "1.2.0",
   "intents": {
     "AC_CONTROL": [
       {
         "pattern": "شغل التكييف",
         "keywords": [
-          {"word": "شغل", "weight": 1.0, "aliases": ["تشغل", "افتح", "شغلي"]},
-          {"word": "تكييف", "weight": 1.0, "aliases": ["تيكيف", "مكيف", "تكييفات"]}
+          {"word": "شغل", "weight": 1.0, "aliases": ["تشغل", "افتح", "شغلي", "ولع", "دور"]},
+          {"word": "تكييف", "weight": 1.0, "aliases": ["تيكيف", "مكيف", "تكييفات", "هوا"]}
         ],
-        "response": "تمام، شغلت التكييف",
+        "responses": [
+          "عنيا حاضر، شغلتلك التكييف يا باشا",
+          "من عنيا، التكييف اشتغل خلاص",
+          "حاضر يا فندم، التكييف دلوقت شغال"
+        ],
         "action": "AC_ON"
       },
       {
         "pattern": "طفي التكييف",
         "keywords": [
-          {"word": "طفي", "weight": 1.0, "aliases": ["اطفي", "قفل", "سكر", "اقفل"]},
+          {"word": "طفي", "weight": 1.0, "aliases": ["اطفي", "قفل", "سكر", "اقفل", "بطل"]},
           {"word": "تكييف", "weight": 1.0, "aliases": ["تيكيف", "مكيف"]}
         ],
-        "response": "تمام، طفيت التكييف",
+        "responses": [
+          "من عنيا، طفيت التكييف خلاص",
+          "حاضر، التكييف اتقفل يا باشا",
+          "عنيا، فصلت التكييف اهه"
+        ],
         "action": "AC_OFF"
       },
       {
-        "pattern": "زيود الحرارة",
+        "pattern": "علي الحرارة",
         "keywords": [
-          {"word": "زيود", "weight": 1.0, "aliases": ["زود", "ارفع", "زودي"]},
-          {"word": "حرارة", "weight": 0.8, "aliases": ["دفء", "حراره"]}
+          {"word": "علي", "weight": 1.0, "aliases": ["زود", "ارفع", "زودي", "سخن"]},
+          {"word": "حرارة", "weight": 0.8, "aliases": ["دفء", "حراره", "تكييف"]}
         ],
-        "response": "تمام، زودت الحرارة",
+        "responses": [
+          "حاضر، عليتلك الحرارة شوية",
+          "عنيا، رفعتلك الدرجة اهه",
+          "من عنيا يا باشا"
+        ],
         "action": "AC_TEMP_UP"
-      },
-      {
-        "pattern": "قلل الحرارة",
-        "keywords": [
-          {"word": "قلل", "weight": 1.0, "aliases": ["نقص", "اخفض", "قللي"]},
-          {"word": "حرارة", "weight": 0.8, "aliases": ["حراره"]}
-        ],
-        "response": "تمام، قللت الحرارة",
-        "action": "AC_TEMP_DOWN"
-      },
-      {
-        "pattern": "التكييف على درجة",
-        "keywords": [
-          {"word": "تكييف", "weight": 0.7},
-          {"word": "درجة", "weight": 1.0, "aliases": ["درجتين", "درجات"]}
-        ],
-        "response": "تمام، ظبطت التكييف",
-        "action": "AC_SET_TEMP"
-      },
-      {
-        "pattern": "تكييف بارد",
-        "keywords": [
-          {"word": "تكييف", "weight": 0.7},
-          {"word": "بارد", "weight": 1.0, "aliases": ["تبريد", "بارده"]}
-        ],
-        "response": "تمام، شغلت التبريد",
-        "action": "AC_MODE_COOL"
-      },
-      {
-        "pattern": "تكييف ساخن",
-        "keywords": [
-          {"word": "تكييف", "weight": 0.7},
-          {"word": "ساخن", "weight": 1.0, "aliases": ["تدفئة", "ساخنه"]}
-        ],
-        "response": "تمام، شغلت التدفئة",
-        "action": "AC_MODE_HEAT"
       }
     ],
     "NAVIGATION": [
       {
         "pattern": "خديني للبيت",
         "keywords": [
-          {"word": "خديني", "weight": 1.0, "aliases": ["ودني", "روح", "خدني"]},
-          {"word": "بيت", "weight": 1.0, "aliases": ["البيت", "منزل", "المنزل"]}
+          {"word": "خديني", "weight": 1.0, "aliases": ["ودني", "روح", "خدني", "وصلني", "نروح"]},
+          {"word": "بيت", "weight": 1.0, "aliases": ["البيت", "منزل", "المنزل", "الدار"]}
         ],
-        "response": "تمام، هوديك البيت",
+        "responses": [
+          "حاضر يا باشا، طريق السلامة، إحنا رايحين البيت",
+          "عنيا، يلا بينا على البيت، توصل بالسلامة",
+          "من عنيا، البيت وحشك برضه، يلا بينا"
+        ],
         "action": "NAV_HOME"
       },
       {
-        "pattern": "خديني للشغل",
+        "pattern": "أنا جعان",
         "keywords": [
-          {"word": "خديني", "weight": 1.0, "aliases": ["ودني", "روح"]},
-          {"word": "شغل", "weight": 1.0, "aliases": ["الشغل", "الشقة", "مكتب"]}
+          {"word": "أنا", "weight": 0.5},
+          {"word": "جعان", "weight": 1.0, "aliases": ["أكل", "مطعم", "ناكل", "عايز اكل", "فطار", "غدا", "عشا"]}
         ],
-        "response": "تمام، هوديك الشغل",
-        "action": "NAV_WORK"
-      },
-      {
-        "pattern": "أقرب بنزين",
-        "keywords": [
-          {"word": "أقرب", "weight": 1.0, "aliases": ["اقرب"]},
-          {"word": "بنزين", "weight": 1.0, "aliases": ["محطة", "وقود", "بترول"]}
+        "responses": [
+          "بالهنا والشفا مقدمًا، بشوفلك أقرب مطعم اهه",
+          "من عنيا، نشوفلك لقمة حلوة، بشوفلك المطاعم اللي حوالينا",
+          "حاضر يا باشا، الجوع كافر، بشوفلك أقرب مطعم دلوقت"
         ],
-        "response": "تمام، هوريك أقرب محطة بنزين",
-        "action": "NAV_GAS_STATION"
-      },
-      {
-        "pattern": "أقرب شحن",
-        "keywords": [
-          {"word": "أقرب", "weight": 1.0, "aliases": ["اقرب"]},
-          {"word": "شحن", "weight": 1.0, "aliases": ["شاحن", "كهرباء"]}
-        ],
-        "response": "تمام، هوريك أقرب نقطة شحن",
-        "action": "NAV_CHARGING_STATION"
-      },
-      {
-        "pattern": "أقرب مطعم",
-        "keywords": [
-          {"word": "أقرب", "weight": 0.8, "aliases": ["اقرب"]},
-          {"word": "مطعم", "weight": 1.0, "aliases": ["أكل", "فود"]}
-        ],
-        "response": "تمام، هوريك أقرب مطعم",
         "action": "NAV_RESTAURANT"
-      },
-      {
-        "pattern": "أقرب مستشفى",
-        "keywords": [
-          {"word": "أقرب", "weight": 0.8, "aliases": ["اقرب"]},
-          {"word": "مستشفى", "weight": 1.0, "aliases": ["سبت", "دكتور"]}
-        ],
-        "response": "تمام، هوريك أقرب مستشفى",
-        "action": "NAV_HOSPITAL"
-      },
-      {
-        "pattern": "أقرب موقف",
-        "keywords": [
-          {"word": "أقرب", "weight": 0.8, "aliases": ["اقرب"]},
-          {"word": "موقف", "weight": 1.0, "aliases": ["باركينج", "جراج"]}
-        ],
-        "response": "تمام، هوريك أقرب موقف",
-        "action": "NAV_PARKING"
-      },
-      {
-        "pattern": "خديني لـ",
-        "keywords": [
-          {"word": "خديني", "weight": 1.0, "aliases": ["ودني", "روح", "نروح"]}
-        ],
-        "response": "تمام، هوديك",
-        "action": "NAV_DESTINATION"
       }
     ],
-    "MEDIA": [
+    "GREETINGS": [
       {
-        "pattern": "شغل موسيقى",
+        "pattern": "صباح الخير",
         "keywords": [
-          {"word": "شغل", "weight": 1.0, "aliases": ["اسمع", "شغلي"]},
-          {"word": "موسيقى", "weight": 1.0, "aliases": ["اغنية", "سماعي", "مزيكا"]}
+          {"word": "صباح", "weight": 1.0, "aliases": ["يا صباح"]},
+          {"word": "الخير", "weight": 0.8, "aliases": ["النور", "الفل", "القشطة"]}
         ],
-        "response": "تمام، شغلت الموسيقى",
-        "action": "MEDIA_PLAY"
+        "responses": [
+          "يا صباح الفل والجمال، تؤمرني بإيه؟",
+          "صباح النور يا باشا، نهارك سعيد إن شاء الله",
+          "يا صباح القشطة، إيه الأخبار؟"
+        ],
+        "action": "GREETING"
       },
       {
-        "pattern": "وقفة الأغنية",
+        "pattern": "إزيك",
         "keywords": [
-          {"word": "وقفة", "weight": 1.0, "aliases": ["وقف", "توقف", "باص"]},
-          {"word": "أغنية", "weight": 0.5, "aliases": ["موسيقى", "اغنيه"]}
+          {"word": "إزيك", "weight": 1.0, "aliases": ["ازيك", "عامله ايه", "اخبارك", "انتي مين"]}
         ],
-        "response": "تمام، وقفت الأغنية",
-        "action": "MEDIA_PAUSE"
-      },
-      {
-        "pattern": "اللي بعدها",
-        "keywords": [
-          {"word": "اللي", "weight": 0.5},
-          {"word": "بعدها", "weight": 1.0, "aliases": ["بعدين", "التالي"]}
+        "responses": [
+          "أنا زي الفل طول ما أنت بخير، أقدر أساعدك في إيه؟",
+          "الحمد لله تمام، معاك بنتي مساعدتك الشخصية، محتاج حاجة؟",
+          "أنا تمام الحمد لله، يا ترى أقدر أعملك إيه النهاردة؟"
         ],
-        "response": "تمام، الأغنية اللي بعدها",
-        "action": "MEDIA_NEXT"
-      },
-      {
-        "pattern": "اللي قبلها",
-        "keywords": [
-          {"word": "اللي", "weight": 0.5},
-          {"word": "قبلها", "weight": 1.0, "aliases": ["قبلي", "السابقة"]}
-        ],
-        "response": "تمام، الأغنية اللي قبلها",
-        "action": "MEDIA_PREVIOUS"
-      },
-      {
-        "pattern": "صوت عالي",
-        "keywords": [
-          {"word": "صوت", "weight": 0.8},
-          {"word": "عالي", "weight": 1.0, "aliases": ["اعلى", "زيود"]}
-        ],
-        "response": "تمام، زودت الصوت",
-        "action": "MEDIA_VOLUME_UP"
-      },
-      {
-        "pattern": "صوت واطي",
-        "keywords": [
-          {"word": "صوت", "weight": 0.8},
-          {"word": "واطي", "weight": 1.0, "aliases": ["اخفض", "قلل"]}
-        ],
-        "response": "تمام، قللت الصوت",
-        "action": "MEDIA_VOLUME_DOWN"
+        "action": "GREETING"
       }
     ],
-    "PHONE": [
+    "SOCIAL": [
       {
-        "pattern": "كلم أحمد",
+        "pattern": "شكرا",
         "keywords": [
-          {"word": "كلم", "weight": 1.0, "aliases": ["اتصل", "كلمي"]},
-          {"word": "أحمد", "weight": 0.8}
+          {"word": "شكرا", "weight": 1.0, "aliases": ["تسلم", "كلك ذوق", "حبيبي", "يا باشا"]}
         ],
-        "response": "تمام، بكلم أحمد",
-        "action": "PHONE_CALL"
-      },
-      {
-        "pattern": "رد عالمكالمة",
-        "keywords": [
-          {"word": "رد", "weight": 1.0, "aliases": ["أجب", "ردى"]},
-          {"word": "مكالمة", "weight": 0.8, "aliases": ["تليفون", "كول"]}
+        "responses": [
+          "الشكر لله، أنا في الخدمة دايمًا",
+          "العفو يا باشا، ده واجبي",
+          "تسلم يا غالي، أي خدمة تانية؟"
         ],
-        "response": "تمام، رديت عالمكالمة",
-        "action": "PHONE_ANSWER"
-      },
-      {
-        "pattern": "أقفل المكالمة",
-        "keywords": [
-          {"word": "أقفل", "weight": 1.0, "aliases": ["انهي", "سكر"]},
-          {"word": "مكالمة", "weight": 0.8}
-        ],
-        "response": "تمام، قفلت المكالمة",
-        "action": "PHONE_END"
+        "action": "SOCIAL_THANKS"
       }
     ],
-    "INFO": [
+    "HELP": [
       {
-        "pattern": "الساعة كام",
+        "pattern": "بتعملي إيه",
         "keywords": [
-          {"word": "الساعة", "weight": 1.0, "aliases": ["ساعة"]},
-          {"word": "كام", "weight": 0.8, "aliases": ["اد ايه"]}
+          {"word": "بتعملي", "weight": 0.8, "aliases": ["تعملي", "ممكن تعملي"]},
+          {"word": "إيه", "weight": 0.8, "aliases": ["ايه", "قوليلي"]}
         ],
-        "response": "",
-        "action": "INFO_TIME"
-      },
-      {
-        "pattern": "حرارة بره إيه",
-        "keywords": [
-          {"word": "حرارة", "weight": 0.8, "aliases": ["طقس"]},
-          {"word": "بره", "weight": 0.8, "aliases": ["خارج"]}
+        "responses": [
+          "أنا أقدر أتحكم في التكييف، والمزيكا، وأوصلك لأي مكان، وأطلبلك أي حد.. قولي بس أنت محتاج إيه؟",
+          "أنا مساعدتك في العربية، أقدر أشغل التكييف أو الملاحة أو أكلم حد من صحابك.. قولي يا بنتي وأنا تحت أمرك"
         ],
-        "response": "",
-        "action": "INFO_WEATHER"
-      },
-      {
-        "pattern": "البطارية كام",
-        "keywords": [
-          {"word": "البطارية", "weight": 1.0, "aliases": ["بطارية", "شحن"]},
-          {"word": "كام", "weight": 0.5}
-        ],
-        "response": "",
-        "action": "INFO_BATTERY"
+        "action": "HELP"
       }
     ]
   },
   "responses": {
-    "success": "تمام يا باشا ✅",
-    "error": "مقدرتش أعمل كده، جرب تاني 🙁",
-    "not_understood": "مسمعتش كويس، ممكن تعيد؟ 🤔",
-    "offline": "أنا أوفلاين دلوقتي، بعض الحاجات مش هتشتغل 📶"
+    "success": "عنيا حاضر، تم يا باشا ✅",
+    "error": "آسفة يا فندم، حصلت مشكلة، جرب تاني 🙁",
+    "not_understood": "مسمعتكش كويس يا غالي، ممكن تعيد؟ 🤔",
+    "offline": "أنا أوفلاين دلوقت، مش كل حاجة هتشتغل 📶"
   }
 }
