@@ -544,8 +544,6 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 - 📧 Email: waleedmandour@gmail.com; w.abumandour@squ.edu.om
 - 💻 GitHub: [@waleedmandour](https://github.com/waleedmandour)
-- 🏛️ Institution: Sultan Qaboos University
-
 ---
 
 ## 🙏 Acknowledgments
