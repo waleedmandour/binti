@@ -1,0 +1,26 @@
+{
+  "agcgw": {
+    "url": "connect-drc.dbankcloud.cn",
+    "backurl": "connect-drc.hicloud.com"
+  },
+  "client": {
+    "cp_id": "890000000000000000",
+    "product_id": "110123456",
+    "client_id": "0000000000000000000000000000000000000000000000000000000000000000",
+    "client_secret": "0000000000000000000000000000000000000000000000000000000000000000",
+    "app_id": "110123456",
+    "package_name": "com.binti.dilink"
+  },
+  "service": {
+    "analytics": {
+      "collector_url": "datacollector-drc.dt.hicloud.com,datacollector-drc.dbankcloud.cn",
+      "resource_id": "p1",
+      "channel_id": ""
+    },
+    "ml": {
+      "ml_service_url": "ml-api-drc.ai.dbankcloud.com,ml-api-drc.ai.hicloud.com"
+    }
+  },
+  "region": "EG",
+  "configuration_version": "1.0"
+}
