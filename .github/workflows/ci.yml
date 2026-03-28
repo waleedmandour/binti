@@ -10,7 +10,7 @@ on:
 
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "21"
   JAVA_DISTRIBUTION: "temurin"
 
 jobs:
@@ -26,9 +26,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
@@ -36,7 +33,7 @@ jobs:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
           gradle-home-cache-cleanup: true
@@ -47,7 +44,7 @@ jobs:
       - name: Build Debug APK
         run: |
           echo "::group::Building Debug APK"
-          ./gradlew assembleDebug --stacktrace --info
+          ./gradlew assembleDebug --stacktrace
           echo "::endgroup::"
 
       - name: Verify Debug APK exists
@@ -83,9 +80,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
@@ -93,7 +87,7 @@ jobs:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
           gradle-home-cache-cleanup: true
@@ -104,7 +98,7 @@ jobs:
       - name: Build Release APK
         run: |
           echo "::group::Building Release APK"
-          ./gradlew assembleRelease --stacktrace --info
+          ./gradlew assembleRelease --stacktrace
           echo "::endgroup::"
 
       - name: Verify Release APK exists
@@ -174,8 +168,8 @@ jobs:
               "package_name": "com.binti.dilink",
               "min_sdk": 26,
               "target_sdk": 34,
-              "version_code": 2,
-              "version_name": "2.0.0"
+              "version_code": 3,
+              "version_name": "2.1.0"
             },
             "models": [
               {
@@ -235,27 +229,6 @@ jobs:
               "download_recommendations": {
                 "wifi_recommended": true,
                 "size_warning_threshold_mb": 500
-              }
-            },
-            "required_models": {
-              "asr_arabic": {
-                "purpose": "Speech recognition - core functionality",
-                "size": "1247 MB",
-                "must_download": true
-              }
-            },
-            "optional_models": {
-              "wake_word": {
-                "purpose": "Wake word detection",
-                "method": "Uses Vosk grammar (no download)"
-              },
-              "nlu_classifier": {
-                "purpose": "Enhanced intent classification",
-                "fallback": "Rule-based matching"
-              },
-              "tts_voice": {
-                "purpose": "Egyptian Arabic voice synthesis",
-                "fallback": "System TTS engines"
               }
             }
           }
